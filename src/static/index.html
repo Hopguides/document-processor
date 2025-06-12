@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem za obdelavo dokumentov v vektorsko bazo</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section { 
+            margin-bottom: 30px; 
+            padding: 20px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            background-color: #fafafa;
+        }
+        h2 { 
+            margin-top: 0; 
+            color: #555;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"], input[type="password"], textarea { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+        button { 
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px; 
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #bee5eb;
+        }
+        .hidden {
+            display: none;
+        }
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .sources {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .source-item {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .source-header {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .answer-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistem za obdelavo dokumentov v vektorsko bazo</h1>
+
+        <!-- API Keys Section -->
+        <div class="section">
+            <h2>1. Nastavitev API ključev</h2>
+            <div id="keys-message"></div>
+            
+            <label for="openai-key">OpenAI API ključ:</label>
+            <input type="password" id="openai-key" placeholder="sk-...">
+            
+            <label for="pinecone-key">Pinecone API ključ:</label>
+            <input type="password" id="pinecone-key" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+            
+            <label for="pinecone-env">Pinecone okolje:</label>
+            <input type="text" id="pinecone-env" placeholder="us-east-1-aws">
+            
+            <button onclick="saveApiKeys()">Shrani API ključe</button>
+            <button onclick="loadApiKeys()">Naloži shranjene ključe</button>
+        </div>
+
+        <!-- Document Upload Section -->
+        <div class="section">
+            <h2>2. Nalaganje dokumentacije</h2>
+            <div id="document-message"></div>
+            
+            <label for="document-file">Izberi datoteko (PDF, TXT, DOCX):</label>
+            <input type="file" id="document-file" accept=".pdf,.txt,.docx">
+            
+            <label for="document-text">Ali vnesi besedilo neposredno:</label>
+            <textarea id="document-text" placeholder="Vnesi 180-stransko dokumentacijo kot besedilo..."></textarea>
+            
+            <button onclick="processDocument()" id="process-btn">Obdelaj dokument</button>
+        </div>
+
+        <!-- Processing Status Section -->
+        <div class="section hidden" id="processing-section">
+            <h2>3. Status obdelave</h2>
+            <div class="progress">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div id="processing-message"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="section hidden" id="results-section">
+            <h2>4. Rezultati</h2>
+            <div id="results-message"></div>
+        </div>
+
+        <!-- RAG Query Section -->
+        <div class="section">
+            <h2>5. RAG Poizvedbe</h2>
+            <div id="rag-message"></div>
+            
+            <label for="question-input">Postavite vprašanje o vaši dokumentaciji:</label>
+            <textarea id="question-input" placeholder="Vnesite vaše vprašanje..."></textarea>
+            
+            <button onclick="askQuestion()" id="ask-btn">Postavi vprašanje</button>
+            <button onclick="checkRAGHealth()" id="health-btn">Preveri stanje sistema</button>
+        </div>
+
+        <!-- RAG Results Section -->
+        <div class="section hidden" id="rag-results-section">
+            <h2>6. Odgovor</h2>
+            <div id="rag-answer"></div>
+            
+            <h3>Viri</h3>
+            <div id="rag-sources"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api';
+
+        // Helper functions
+        function showMessage(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function clearMessage(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        // Save API keys
+        async function saveApiKeys() {
+            const openaiKey = document.getElementById('openai-key').value;
+            const pineconeKey = document.getElementById('pinecone-key').value;
+            const pineconeEnv = document.getElementById('pinecone-env').value;
+
+            if (!openaiKey || !pineconeKey || !pineconeEnv) {
+                showMessage('keys-message', 'Prosim, izpolni vsa polja.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/save-keys`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        openai_api_key: openaiKey,
+                        pinecone_api_key: pineconeKey,
+                        pinecone_environment: pineconeEnv
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('keys-message', 'API ključi so bili uspešno shranjeni!', 'success');
+                    // Clear the input fields for security
+                    document.getElementById('openai-key').value = '';
+                    document.getElementById('pinecone-key').value = '';
+                } else {
+                    showMessage('keys-message', `Napaka: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage('keys-message', `Napaka pri shranjevanju: ${error.message}`, 'error');
+            }
+        }
+
+        // Load API keys
+        async function loadApiKeys() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/load-keys`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('openai-key').value = data.openai_api_key;
+                    document.getElementById('pinecone-key').value = data.pinecone_api_key;
+                    document.getElementById('pinecone-env').value = data.pinecone_environment;
+                    
+                    if (data.openai_api_key && data.pinecone_api_key) {
+                        showMessage('keys-message', 'API ključi so bili naloženi.', 'success');
+                    } else {
+                        showMessage('keys-message', 'Ni shranjenih API ključev.', 'info');
+                    }
+                } else {
+                    showMessage('keys-message', `Napaka: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage('keys-message', `Napaka pri nalaganju: ${error.message}`, 'error');
+            }
+        }
+
+        // Process document
+        async function processDocument() {
+            const fileInput = document.getElementById('document-file');
+            const textInput = document.getElementById('document-text').value;
+            
+            if (!fileInput.files[0] && !textInput.trim()) {
+                showMessage('document-message', 'Prosim, izberi datoteko ali vnesi besedilo.', 'error');
+                return;
+            }
+
+            // Show processing section
+            document.getElementById('processing-section').classList.remove('hidden');
+            document.getElementById('process-btn').disabled = true;
+            
+            showMessage('processing-message', 'Začenjam obdelavo dokumenta...', 'info');
+            updateProgress(10);
+
+            try {
+                let content = textInput;
+                
+                // If file is selected, read it
+                if (fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    showMessage('processing-message', 'Berem datoteko...', 'info');
+                    updateProgress(20);
+                    
+                    content = await readFileContent(file);
+                    if (!content) {
+                        throw new Error('Ni bilo mogoče prebrati datoteke.');
+                    }
+                }
+                
+                showMessage('processing-message', 'Pošiljam dokument na obdelavo...', 'info');
+                updateProgress(40);
+                
+                const response = await fetch(`${API_BASE_URL}/process-document`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: content,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                const data = await response.json();
+                updateProgress(90);
+                
+                if (response.ok && data.success) {
+                    updateProgress(100);
+                    showMessage('processing-message', 'Obdelava uspešno končana!', 'success');
+                    
+                    // Show results
+                    document.getElementById('results-section').classList.remove('hidden');
+                    showMessage('results-message', 
+                        `✅ Dokument je bil uspešno obdelan!<br><br>
+                        📊 <strong>Statistike:</strong><br>
+                        • Število kosov: ${data.chunks_processed}<br>
+                        • Skupno znakov: ${data.total_characters}<br>
+                        • Povprečna velikost kosa: ${data.average_chunk_size}<br>
+                        • Pinecone indeks: ${data.index_name}<br><br>
+                        💾 Vsi podatki so shranjeni v vektorsko bazo in pripravljeni za RAG poizvedbe.`, 
+                        'success'
+                    );
+                } else {
+                    throw new Error(data.error || 'Neznana napaka pri obdelavi');
+                }
+            } catch (error) {
+                updateProgress(0);
+                showMessage('processing-message', `❌ Napaka pri obdelavi: ${error.message}`, 'error');
+                showMessage('document-message', `Napaka: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('process-btn').disabled = false;
+            }
+        }
+
+        // Read file content
+        async function readFileContent(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    resolve(e.target.result);
+                };
+                reader.onerror = function() {
+                    reject(new Error('Napaka pri branju datoteke'));
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        // Update progress bar
+        function updateProgress(percentage) {
+            document.getElementById('progress-bar').style.width = percentage + '%';
+        }
+
+        // Load saved keys on page load
+        window.onload = function() {
+            loadApiKeys();
+            checkRAGHealth();
+        };
+
+        // RAG Functions
+        async function checkRAGHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/rag/health`);
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'ok') {
+                    showMessage('rag-message', `✅ ${data.message}`, 'success');
+                } else {
+                    showMessage('rag-message', `⚠️ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showMessage('rag-message', `❌ Napaka pri preverjanju stanja: ${error.message}`, 'error');
+            }
+        }
+
+        async function askQuestion() {
+            const question = document.getElementById('question-input').value.trim();
+            
+            if (!question) {
+                showMessage('rag-message', 'Prosim, vnesite vprašanje.', 'error');
+                return;
+            }
+
+            // Disable button and show loading
+            document.getElementById('ask-btn').disabled = true;
+            showMessage('rag-message', 'Iščem odgovor...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/rag/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: question })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Show results section
+                    document.getElementById('rag-results-section').classList.remove('hidden');
+                    
+                    // Display answer
+                    document.getElementById('rag-answer').innerHTML = 
+                        `<div class="answer-box">${data.answer}</div>`;
+                    
+                    // Display sources
+                    let sourcesHtml = '<div class="sources">';
+                    if (data.sources && data.sources.length > 0) {
+                        data.sources.forEach((source, index) => {
+                            sourcesHtml += `
+                                <div class="source-item">
+                                    <div class="source-header">Vir ${index + 1}:</div>
+                                    <div>${source.content}</div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        sourcesHtml += '<div class="source-item">Ni najdenih virov.</div>';
+                    }
+                    sourcesHtml += '</div>';
+                    
+                    document.getElementById('rag-sources').innerHTML = sourcesHtml;
+                    
+                    showMessage('rag-message', 
+                        `✅ Odgovor najden! Uporabljenih ${data.num_sources} virov.`, 
+                        'success'
+                    );
+                    
+                    // Clear question input
+                    document.getElementById('question-input').value = '';
+                    
+                } else {
+                    throw new Error(data.error || 'Neznana napaka pri poizvedbi');
+                }
+            } catch (error) {
+                showMessage('rag-message', `❌ Napaka: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('ask-btn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
+
