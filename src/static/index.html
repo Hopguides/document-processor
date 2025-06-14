@@ -145,6 +145,26 @@
             white-space: pre-wrap;
             line-height: 1.6;
         }
+        .provider-selection {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .provider-selection label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .provider-selection select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
         .progress-bar {
             height: 100%;
             background-color: #007bff;
@@ -208,6 +228,21 @@
         <div class="section">
             <h2>5. RAG Poizvedbe</h2>
             <div id="rag-message"></div>
+            
+            <!-- LLM Provider Selection -->
+            <div class="provider-selection">
+                <label for="llm-provider">Izberi LLM ponudnika:</label>
+                <select id="llm-provider" onchange="updateModelOptions()">
+                    <option value="openai">OpenAI (GPT)</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="anthropic">Anthropic Claude</option>
+                </select>
+                
+                <label for="llm-model">Izberi model:</label>
+                <select id="llm-model">
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </select>
+            </div>
             
             <label for="question-input">Postavite vprašanje o vaši dokumentaciji:</label>
             <textarea id="question-input" placeholder="Vnesite vaše vprašanje..."></textarea>
@@ -397,8 +432,69 @@
         // Load saved keys on page load
         window.onload = function() {
             loadApiKeys();
+            loadProviders();
             checkRAGHealth();
         };
+
+        // Provider management
+        let availableProviders = [];
+        let providerModels = {};
+
+        async function loadProviders() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/rag/providers`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    availableProviders = data.providers;
+                    providerModels = data.provider_info;
+                    updateProviderDropdown();
+                } else {
+                    console.log('Providers not loaded:', data.error);
+                }
+            } catch (error) {
+                console.log('Error loading providers:', error);
+            }
+        }
+
+        function updateProviderDropdown() {
+            const providerSelect = document.getElementById('llm-provider');
+            providerSelect.innerHTML = '';
+            
+            // Dodaj samo dostopne ponudnike
+            const providerNames = {
+                'openai': 'OpenAI (GPT)',
+                'gemini': 'Google Gemini',
+                'anthropic': 'Anthropic Claude'
+            };
+            
+            availableProviders.forEach(provider => {
+                const option = document.createElement('option');
+                option.value = provider;
+                option.textContent = providerNames[provider] || provider;
+                providerSelect.appendChild(option);
+            });
+            
+            // Posodobi modele za prvi ponudnik
+            if (availableProviders.length > 0) {
+                updateModelOptions();
+            }
+        }
+
+        function updateModelOptions() {
+            const provider = document.getElementById('llm-provider').value;
+            const modelSelect = document.getElementById('llm-model');
+            modelSelect.innerHTML = '';
+            
+            if (providerModels[provider] && providerModels[provider].models) {
+                providerModels[provider].models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    modelSelect.appendChild(option);
+                });
+            }
+        }
 
         // RAG Functions
         async function checkRAGHealth() {
@@ -418,6 +514,8 @@
 
         async function askQuestion() {
             const question = document.getElementById('question-input').value.trim();
+            const provider = document.getElementById('llm-provider').value;
+            const model = document.getElementById('llm-model').value;
             
             if (!question) {
                 showMessage('rag-message', 'Prosim, vnesite vprašanje.', 'error');
@@ -426,13 +524,17 @@
 
             // Disable button and show loading
             document.getElementById('ask-btn').disabled = true;
-            showMessage('rag-message', 'Iščem odgovor...', 'info');
+            showMessage('rag-message', `Iščem odgovor z ${provider}...`, 'info');
             
             try {
                 const response = await fetch(`${API_BASE_URL}/rag/query`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: question })
+                    body: JSON.stringify({ 
+                        question: question,
+                        provider: provider,
+                        model: model
+                    })
                 });
 
                 const data = await response.json();
@@ -441,9 +543,10 @@
                     // Show results section
                     document.getElementById('rag-results-section').classList.remove('hidden');
                     
-                    // Display answer
+                    // Display answer with provider info
                     document.getElementById('rag-answer').innerHTML = 
-                        `<div class="answer-box">${data.answer}</div>`;
+                        `<div class="answer-box">${data.answer}</div>
+                         <div class="provider-info">Odgovor generiran z: ${data.provider} (${data.model})</div>`;
                     
                     // Display sources
                     let sourcesHtml = '<div class="sources">';
@@ -464,7 +567,7 @@
                     document.getElementById('rag-sources').innerHTML = sourcesHtml;
                     
                     showMessage('rag-message', 
-                        `✅ Odgovor najden! Uporabljenih ${data.num_sources} virov.`, 
+                        `✅ Odgovor najden z ${data.provider}! Uporabljenih ${data.num_sources} virov.`, 
                         'success'
                     );
                     
