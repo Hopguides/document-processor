@@ -165,6 +165,117 @@
             border-radius: 4px;
             font-size: 14px;
         }
+        .stats-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        .key-form {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-row {
+            margin-bottom: 15px;
+        }
+        .form-row label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-row input, .form-row textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .keys-list {
+            margin-top: 20px;
+        }
+        .keys-controls {
+            margin-bottom: 15px;
+        }
+        .keys-controls button {
+            margin-right: 10px;
+        }
+        .keys-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .keys-table th, .keys-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .keys-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-rate-limited {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-disabled {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .action-buttons button {
+            padding: 4px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-test {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
         .progress-bar {
             height: 100%;
             background-color: #007bff;
@@ -224,9 +335,65 @@
             <div id="results-message"></div>
         </div>
 
+        <!-- Gemini Keys Management Section -->
+        <div class="section">
+            <h2>6. Upravljanje Gemini API ključev</h2>
+            <div id="gemini-keys-message"></div>
+            
+            <!-- Statistics Dashboard -->
+            <div class="stats-dashboard" id="stats-dashboard">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-keys">0</div>
+                    <div class="stat-label">Skupaj ključev</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="active-keys">0</div>
+                    <div class="stat-label">Aktivni</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="rate-limited-keys">0</div>
+                    <div class="stat-label">Rate Limited</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-requests">0</div>
+                    <div class="stat-label">Skupaj zahtevkov</div>
+                </div>
+            </div>
+            
+            <!-- Add New Key Form -->
+            <div class="key-form">
+                <h3>Dodaj nov Gemini API ključ</h3>
+                <div class="form-row">
+                    <label for="key-name">Ime ključa:</label>
+                    <input type="text" id="key-name" placeholder="npr. Gemini-Key-1">
+                </div>
+                <div class="form-row">
+                    <label for="key-api-key">API ključ:</label>
+                    <input type="password" id="key-api-key" placeholder="AIza...">
+                </div>
+                <div class="form-row">
+                    <label for="key-notes">Opombe:</label>
+                    <textarea id="key-notes" placeholder="Opcijske opombe o ključu..."></textarea>
+                </div>
+                <button onclick="addGeminiKey()" id="add-key-btn">Dodaj ključ</button>
+            </div>
+            
+            <!-- Keys List -->
+            <div class="keys-list">
+                <h3>Seznam ključev</h3>
+                <div class="keys-controls">
+                    <button onclick="loadGeminiKeys()" id="refresh-keys-btn">Osveži</button>
+                    <button onclick="resetAllRateLimits()" id="reset-limits-btn">Resetiraj Rate Limite</button>
+                </div>
+                <div id="keys-table-container">
+                    <!-- Tabela ključev se bo naložila dinamično -->
+                </div>
+            </div>
+        </div>
+
         <!-- RAG Query Section -->
         <div class="section">
-            <h2>5. RAG Poizvedbe</h2>
+            <h2>7. RAG Poizvedbe</h2>
             <div id="rag-message"></div>
             
             <!-- LLM Provider Selection -->
@@ -253,7 +420,7 @@
 
         <!-- RAG Results Section -->
         <div class="section hidden" id="rag-results-section">
-            <h2>6. Odgovor</h2>
+            <h2>8. Odgovor</h2>
             <div id="rag-answer"></div>
             
             <h3>Viri</h3>
@@ -434,7 +601,235 @@
             loadApiKeys();
             loadProviders();
             checkRAGHealth();
+            loadGeminiKeys();
+            loadGeminiStatistics();
         };
+
+        // Gemini Keys Management Functions
+        async function loadGeminiKeys() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/gemini-keys/list`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayKeysTable(data.keys);
+                } else {
+                    showMessage('gemini-keys-message', `Napaka: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage('gemini-keys-message', `Napaka pri nalaganju ključev: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadGeminiStatistics() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/gemini-keys/statistics`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.statistics;
+                    document.getElementById('total-keys').textContent = stats.total_keys;
+                    document.getElementById('active-keys').textContent = stats.active_keys;
+                    document.getElementById('rate-limited-keys').textContent = stats.rate_limited_keys;
+                    document.getElementById('total-requests').textContent = stats.total_requests;
+                }
+            } catch (error) {
+                console.log('Napaka pri nalaganju statistik:', error);
+            }
+        }
+
+        function displayKeysTable(keys) {
+            const container = document.getElementById('keys-table-container');
+            
+            if (keys.length === 0) {
+                container.innerHTML = '<p>Ni dodanih ključev.</p>';
+                return;
+            }
+            
+            let tableHtml = `
+                <table class="keys-table">
+                    <thead>
+                        <tr>
+                            <th>Ime</th>
+                            <th>API ključ</th>
+                            <th>Status</th>
+                            <th>Zahtevki</th>
+                            <th>Napake</th>
+                            <th>Zadnja uporaba</th>
+                            <th>Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            keys.forEach(key => {
+                const statusClass = `status-${key.status.replace('_', '-')}`;
+                const lastUsed = key.last_used ? new Date(key.last_used).toLocaleString('sl-SI') : 'Nikoli';
+                
+                tableHtml += `
+                    <tr>
+                        <td>${key.name}</td>
+                        <td>${key.api_key_preview}</td>
+                        <td><span class="status-badge ${statusClass}">${key.status}</span></td>
+                        <td>${key.total_requests}</td>
+                        <td>${key.error_count}</td>
+                        <td>${lastUsed}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-test" onclick="testGeminiKey(${key.id})">Test</button>
+                                <button class="btn-edit" onclick="editGeminiKey(${key.id})">Uredi</button>
+                                <button class="btn-delete" onclick="deleteGeminiKey(${key.id}, '${key.name}')">Izbriši</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHtml += '</tbody></table>';
+            container.innerHTML = tableHtml;
+        }
+
+        async function addGeminiKey() {
+            const name = document.getElementById('key-name').value.trim();
+            const apiKey = document.getElementById('key-api-key').value.trim();
+            const notes = document.getElementById('key-notes').value.trim();
+            
+            if (!name || !apiKey) {
+                showMessage('gemini-keys-message', 'Ime in API ključ sta obvezna', 'error');
+                return;
+            }
+            
+            document.getElementById('add-key-btn').disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/gemini-keys/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, api_key: apiKey, notes })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('gemini-keys-message', data.message, 'success');
+                    // Počisti formo
+                    document.getElementById('key-name').value = '';
+                    document.getElementById('key-api-key').value = '';
+                    document.getElementById('key-notes').value = '';
+                    // Osveži seznam
+                    loadGeminiKeys();
+                    loadGeminiStatistics();
+                } else {
+                    showMessage('gemini-keys-message', data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('gemini-keys-message', `Napaka: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('add-key-btn').disabled = false;
+            }
+        }
+
+        async function testGeminiKey(keyId) {
+            try {
+                showMessage('gemini-keys-message', 'Testiram ključ...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/gemini-keys/test/${keyId}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('gemini-keys-message', data.message, 'success');
+                } else {
+                    showMessage('gemini-keys-message', data.error, 'error');
+                }
+                
+                // Osveži seznam in statistike
+                loadGeminiKeys();
+                loadGeminiStatistics();
+                
+            } catch (error) {
+                showMessage('gemini-keys-message', `Napaka pri testiranju: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteGeminiKey(keyId, keyName) {
+            if (!confirm(`Ali ste prepričani, da želite izbrisati ključ "${keyName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/gemini-keys/delete/${keyId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('gemini-keys-message', data.message, 'success');
+                    loadGeminiKeys();
+                    loadGeminiStatistics();
+                } else {
+                    showMessage('gemini-keys-message', data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('gemini-keys-message', `Napaka pri brisanju: ${error.message}`, 'error');
+            }
+        }
+
+        async function resetAllRateLimits() {
+            if (!confirm('Ali ste prepričani, da želite resetirati vse rate limite?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/gemini-keys/reset-rate-limits`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('gemini-keys-message', data.message, 'success');
+                    loadGeminiKeys();
+                    loadGeminiStatistics();
+                } else {
+                    showMessage('gemini-keys-message', data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('gemini-keys-message', `Napaka: ${error.message}`, 'error');
+            }
+        }
+
+        function editGeminiKey(keyId) {
+            // Preprosta implementacija - lahko bi dodali modal
+            const newName = prompt('Vnesite novo ime ključa:');
+            if (newName && newName.trim()) {
+                updateGeminiKey(keyId, { name: newName.trim() });
+            }
+        }
+
+        async function updateGeminiKey(keyId, updates) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/gemini-keys/update/${keyId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('gemini-keys-message', data.message, 'success');
+                    loadGeminiKeys();
+                } else {
+                    showMessage('gemini-keys-message', data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('gemini-keys-message', `Napaka: ${error.message}`, 'error');
+            }
+        }
 
         // Provider management
         let availableProviders = [];
