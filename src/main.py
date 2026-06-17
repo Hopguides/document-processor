@@ -22,6 +22,10 @@ app.register_blueprint(rag_bp, url_prefix='/api/rag')
 def index():
     return send_from_directory('static', 'index.html')
 
+@app.route('/chat')
+def chat():
+    return send_from_directory('static', 'chat.html')
+
 @app.route('/<path:filename>')
 def static_files(filename):
     return send_from_directory('static', filename)

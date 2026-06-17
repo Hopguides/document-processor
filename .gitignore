@@ -4,3 +4,15 @@ __pycache__/
 .env
 api_keys.json
 
+.DS_Store
+.env
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+.next/
+dist/
+build/
+.cache/
+*.log
